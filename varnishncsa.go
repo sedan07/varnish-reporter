@@ -11,13 +11,15 @@ import (
 )
 
 type Varnishncsa struct {
+	StatsdServer        string
+        StatsdPrefix        string
+	StatsdSendInterval  int
 }
 
 func (varnishncsa *Varnishncsa) Connect() {
-	prefix := "varnish."
-	statsdclient := statsd.NewStatsdClient("localhost:8125", prefix)
+	statsdclient := statsd.NewStatsdClient(varnishncsa.StatsdServer, varnishncsa.StatsdPrefix)
 	statsdclient.CreateSocket()
-	interval := time.Second * 2 
+	interval := time.Duration(int(time.Millisecond) * varnishncsa.StatsdSendInterval)
 	stats := statsd.NewStatsdBuffer(interval, statsdclient)
 	defer stats.Close()
 
@@ -34,12 +36,11 @@ func (varnishncsa *Varnishncsa) Connect() {
 
 	scanner := bufio.NewScanner(stdout)
         for scanner.Scan() {
-            fmt.Printf("%s \n", scanner.Text())
 	    r := Record{scanner.Text(), stats}
-	    go r.Process()
+	    r.Process()
         }
         if err := scanner.Err(); err != nil {
-            fmt.Fprintln(os.Stderr, "There was an error with the scanner in attached container", err)
+            fmt.Fprintln(os.Stderr, "There was an error with the scanner attached to varnishncsa", err)
         }
 	cmd.Wait()
 }
