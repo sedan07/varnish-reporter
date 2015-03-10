@@ -7,6 +7,7 @@ import (
 	"os"
 	"github.com/quipo/statsd"
 	"math"
+	"errors"
 )
 var response = regexp.MustCompile(`GET http\:\/\/[^/]+([^\s\?]+).*([0-9]+\.[0-9]+)$`)
 
@@ -21,16 +22,18 @@ type Stat struct {
 }
 
 func (record *Record) Process() {
-	stat := record.parse()
-	stat.report(record.stats)
+	stat, err := record.parse()
+	if err == nil {
+		stat.report(record.stats)
+	}
 }
 
-func (record *Record) parse() Stat {
-	fmt.Println(response.FindStringSubmatchIndex(record.Message))
+func (record *Record) parse() (Stat, error) {
+	// fmt.Println(response.FindStringSubmatchIndex(record.Message))
 	res := response.FindStringSubmatch(record.Message)
-	fmt.Println(res)
+	// fmt.Println(res)
 	if len(res) < 3 {
-		panic(`Regex didn't pull out all the parts from the log entry!`)
+		return Stat{0, ""}, errors.New(`Regex didn't pull out all the parts from the log entry!`)
 	}
 
 	time, err := strconv.ParseFloat(res[2], 64)
@@ -38,9 +41,9 @@ func (record *Record) parse() Stat {
 		fmt.Fprintln(os.Stderr, `balls!!!`, err)
 	}
 	time = time * 1000
-	fmt.Println(time)
+	// fmt.Println(time)
 
-	return Stat{time, res[1]}
+	return Stat{time, res[1]}, nil
 }
 
 func (stat *Stat) report(statsd *statsd.StatsdBuffer) {
