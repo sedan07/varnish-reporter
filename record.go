@@ -8,11 +8,11 @@ import (
 	"github.com/quipo/statsd"
 	"math"
 )
-var response = regexp.MustCompile(`GET http\:\/\/[^/]+([^\s\?]+).*([0-9]+\.[0-9]+)$`)
 
 type Record struct {
-	Message  string
-	stats    *statsd.StatsdBuffer
+	Message      string
+	stats        *statsd.StatsdBuffer
+        recordRegex  string
 }
 
 type Stat struct {
@@ -26,11 +26,12 @@ func (record *Record) Process() {
 }
 
 func (record *Record) parse() Stat {
+        var response = regexp.MustCompile(record.recordRegex)
 	fmt.Println(response.FindStringSubmatchIndex(record.Message))
 	res := response.FindStringSubmatch(record.Message)
 	fmt.Println(res)
 	if len(res) < 3 {
-		panic(`Regex didn't pull out all the parts from the log entry!`)
+		panic(`record.recordRegex Regex didn't pull out all the parts from the log entry!`)
 	}
 
 	time, err := strconv.ParseFloat(res[2], 64)

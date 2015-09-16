@@ -14,6 +14,7 @@ type Varnishncsa struct {
 	StatsdServer        string
         StatsdPrefix        string
 	StatsdSendInterval  int
+        RecordRegex         string
 }
 
 func (varnishncsa *Varnishncsa) Connect() {
@@ -36,7 +37,7 @@ func (varnishncsa *Varnishncsa) Connect() {
 
 	scanner := bufio.NewScanner(stdout)
         for scanner.Scan() {
-	    r := Record{scanner.Text(), stats}
+	    r := Record{scanner.Text(), stats, varnishncsa.RecordRegex}
 	    r.Process()
         }
         if err := scanner.Err(); err != nil {

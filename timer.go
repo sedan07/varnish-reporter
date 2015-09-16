@@ -11,6 +11,7 @@ var (
 	statsdServer = flag.String("H", "localhost:8125", "Hostname and port of the statsd server")
 	statsdPrefix = flag.String("p", "", "Prefix to add to all statsd keys")
 	statsdInterval = flag.Int("i", 1000, "Number of milliseconds between flushes to statsd")
+        recordRegex = flag.String("r", `GET http\:\/\/[^/]+([^\s\?]+).*([0-9]+\.[0-9]+)$`, "Regular expresion to match on varnishncsa output")
 )
 
 func usage() {
@@ -26,7 +27,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "warning: statsd prefix must end in a '.'\n")
 		os.Exit(2)
 	}
-	varnishncsa := Varnishncsa{*statsdServer, *statsdPrefix, *statsdInterval}
+	varnishncsa := Varnishncsa{*statsdServer, *statsdPrefix, *statsdInterval, *recordRegex}
 	varnishncsa.Connect()
 }
 
