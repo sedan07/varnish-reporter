@@ -21,27 +21,29 @@ type Stat struct {
 }
 
 func (record *Record) Process() {
-	stat := record.parse()
-	stat.report(record.stats)
+	var stat, err = record.parse()
+        if err == `nil` {
+		stat.report(record.stats)
+	}
+	
 }
 
-func (record *Record) parse() Stat {
+func (record *Record) parse() (Stat, string) {
         var response = regexp.MustCompile(record.recordRegex)
-	fmt.Println(response.FindStringSubmatchIndex(record.Message))
 	res := response.FindStringSubmatch(record.Message)
-	fmt.Println(res)
-	if len(res) < 3 {
-		panic(`record.recordRegex Regex didn't pull out all the parts from the log entry!`)
-	}
+	if len(res) == 3 {
 
-	time, err := strconv.ParseFloat(res[2], 64)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, `balls!!!`, err)
-	}
-	time = time * 1000
-	fmt.Println(time)
+		time, err := strconv.ParseFloat(res[2], 64)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, `balls!!!`, err)
+		}
+		time = time * 1000
 
-	return Stat{time, res[1]}
+		return Stat{time, res[1]}, `nil`
+	} else {
+		return Stat{0, `null`}, `Stat did not match`
+	}
+        
 }
 
 func (stat *Stat) report(statsd *statsd.StatsdBuffer) {
